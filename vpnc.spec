@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.2
-Release:        2
+Release:        3
 Summary:        IPSec VPN client compatible with Cisco equipment
 
 Group:          Applications/Internet
@@ -9,6 +9,7 @@ URL:            http://www.unix-ag.uni-kl.de/~massar/vpnc/
 Source0:        vpnc-0.3.2.tar.gz
 Source1:        generic-vpnc.conf
 Patch0:         vpnc-0.3.2-pie.patch
+Patch1:         vpnc-0.3.2-64bit.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 0:1.1.90
@@ -23,6 +24,7 @@ shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 %prep
 %setup -q 
 %patch0 -p1
+%patch1 -p1
 
 %build
 make
@@ -45,6 +47,9 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/*
 
 %changelog
+* Wed Jan 05 2005 Warren Togami <wtogami@redhat.com> 0.3.2-3
+- Fix 64bit
+
 * Thu Dec 23 2004 Warren Togami <wtogami@redhat.com> 0.3.2-2
 - make PIE (davej)
 
