@@ -1,6 +1,7 @@
 Name:           vpnc
 Version:        0.3.2
-Release:        3
+Release:        4
+
 Summary:        IPSec VPN client compatible with Cisco equipment
 
 Group:          Applications/Internet
@@ -47,6 +48,9 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/*
 
 %changelog
+* Fri Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
+- rebuilt
+
 * Wed Jan 05 2005 Warren Togami <wtogami@redhat.com> 0.3.2-3
 - Fix 64bit
 
