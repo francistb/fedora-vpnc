@@ -12,8 +12,8 @@ Patch0:         vpnc-0.3.2-pie.patch
 Patch1:         vpnc-0.3.2-64bit.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libgcrypt-devel > 0:1.1.90
-Requires:       kernel >= 0:2.4
+BuildRequires:  libgcrypt-devel > 1.1.90
+Requires:       kernel >= 2.4
 
 %description
 A VPN client compatible with Cisco's EasyVPN equipment.
@@ -22,7 +22,7 @@ Supports IPSec (ESP) with Mode Configuration and Xauth.  Supports only
 shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 
 %prep
-%setup -q 
+%setup -q
 %patch0 -p1
 %patch1 -p1
 
