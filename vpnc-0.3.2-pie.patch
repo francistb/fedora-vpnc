@@ -6,7 +6,7 @@ diff -urN vpnc-0.3.2.orig/Makefile vpnc-0.3.2/Makefile
  
  CC=gcc
 -CFLAGS=-W -Wall -O -g '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
-+CFLAGS=-W -Wall -O2 -g -fpie -pie '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
++CFLAGS=-W -Wall $(RPM_OPT_FLAGS) -fpie -pie '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
  LDFLAGS=-g $(shell libgcrypt-config --libs)
  
  ifeq ($(shell uname -s), Linux)

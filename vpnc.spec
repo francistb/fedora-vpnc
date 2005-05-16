@@ -1,16 +1,15 @@
 Name:           vpnc
-Version:        0.3.2
-Release:        4
+Version:        0.3.3
+Release:        1
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
 Group:          Applications/Internet
 License:        GPL
 URL:            http://www.unix-ag.uni-kl.de/~massar/vpnc/
-Source0:        vpnc-0.3.2.tar.gz
+Source0:        vpnc-0.3.3.tar.gz
 Source1:        generic-vpnc.conf
 Patch0:         vpnc-0.3.2-pie.patch
-Patch1:         vpnc-0.3.2-64bit.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
@@ -25,17 +24,16 @@ shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 %prep
 %setup -q
 %patch0 -p1
-%patch1 -p1
 
 %build
-make
+make PREFIX=/usr
 
 %install
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/{sbin,etc}
+make install DESTDIR="$RPM_BUILD_ROOT" PREFIX=/usr
+install -m 0600 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/default.conf
+rm $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/vpnc.conf
 
-install -m 755 vpnc $RPM_BUILD_ROOT/sbin
-install -m 600 %{SOURCE1} $RPM_BUILD_ROOT/etc/vpnc.conf
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -43,11 +41,16 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %doc README
-%dev(c, 10, 200) /dev/tun
-%config(noreplace) /etc/vpnc.conf
-/sbin/*
+
+%config(noreplace) %{_sysconfdir}/vpnc/default.conf
+%{_sbindir}/*
+%{_sysconfdir}/vpnc
+%{_mandir}/man8/*
 
 %changelog
+* Mon May 16 2005 Tomas Mraz <tmraz@redhat.com> 0.3.3-1
+- new upstream version
+
 * Fri Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
 - rebuilt
 
