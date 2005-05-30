@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        1
+Release:        2
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -10,6 +10,7 @@ URL:            http://www.unix-ag.uni-kl.de/~massar/vpnc/
 Source0:        vpnc-0.3.3.tar.gz
 Source1:        generic-vpnc.conf
 Patch0:         vpnc-0.3.2-pie.patch
+Patch1:		vpnc-0.3.3-sbin-path.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
@@ -24,6 +25,7 @@ shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 %prep
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 %build
 make PREFIX=/usr
@@ -33,7 +35,10 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR="$RPM_BUILD_ROOT" PREFIX=/usr
 install -m 0600 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/default.conf
 rm $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/vpnc.conf
-
+mkdir -p $RPM_BUILD_ROOT%{_var}/run/vpnc
+touch $RPM_BUILD_ROOT%{_var}/run/vpnc/pid \
+      $RPM_BUILD_ROOT%{_var}/run/vpnc/defaultroute \
+      $RPM_BUILD_ROOT%{_var}/run/vpnc/resolv.conf-backup
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -46,8 +51,16 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/*
 %{_sysconfdir}/vpnc
 %{_mandir}/man8/*
+%dir %{_var}/run/vpnc
+%ghost %verify(not md5 size mtime) %{_var}/run/vpnc/pid
+%ghost %verify(not md5 size mtime) %{_var}/run/vpnc/defaultroute
+%ghost %verify(not md5 size mtime) %{_var}/run/vpnc/resolv.conf-backup
 
 %changelog
+* Mon May 30 2005 Tomas Mraz <tmraz@redhat.com> 0.3.3-2
+- package /var/run/vpnc and ghost files it can contain (#159015)
+- add /sbin /usr/sbin to the path in vpnc-script (#159099)
+
 * Mon May 16 2005 Tomas Mraz <tmraz@redhat.com> 0.3.3-1
 - new upstream version
 
