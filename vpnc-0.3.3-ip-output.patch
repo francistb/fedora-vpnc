@@ -1,0 +1,11 @@
+--- vpnc-0.3.3/vpnc-script.ip-output	2005-06-15 19:56:12.000000000 +0200
++++ vpnc-0.3.3/vpnc-script	2005-06-15 19:58:29.000000000 +0200
+@@ -73,7 +73,7 @@
+ 
+ if [ -n "$IPROUTE" ]; then
+ 	fix_ip_get_output () {
+-		sed 's/cache//;s/metric[0-9]\+ [0-9]\+//g'
++		sed 's/cache//;s/metric[ 0-9]\+//g'
+ 	}
+ 
+ 	set_vpngateway_route() {

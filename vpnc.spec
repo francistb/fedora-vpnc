@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        2
+Release:        3
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -11,6 +11,7 @@ Source0:        vpnc-0.3.3.tar.gz
 Source1:        generic-vpnc.conf
 Patch0:         vpnc-0.3.2-pie.patch
 Patch1:		vpnc-0.3.3-sbin-path.patch
+Patch2:		vpnc-0.3.3-ip-output.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
@@ -24,8 +25,9 @@ shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 
 %prep
 %setup -q
-%patch0 -p1
-%patch1 -p1
+%patch0 -p1 -b .pie
+%patch1 -p1 -b .sbin-path
+%patch2 -p1 -b .ip-output
 
 %build
 make PREFIX=/usr
@@ -57,6 +59,9 @@ rm -rf $RPM_BUILD_ROOT
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/resolv.conf-backup
 
 %changelog
+* Wed Jun 15 2005 Tomas Mraz <tmraz@redhat.com> 0.3.3-3
+- improve fix_ip_get_output in vpnc-script (#160364)
+
 * Mon May 30 2005 Tomas Mraz <tmraz@redhat.com> 0.3.3-2
 - package /var/run/vpnc and ghost files it can contain (#159015)
 - add /sbin /usr/sbin to the path in vpnc-script (#159099)
