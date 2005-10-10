@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        3
+Release:        4
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -12,6 +12,7 @@ Source1:        generic-vpnc.conf
 Patch0:         vpnc-0.3.2-pie.patch
 Patch1:		vpnc-0.3.3-sbin-path.patch
 Patch2:		vpnc-0.3.3-ip-output.patch
+Patch3:		vpnc-0.3.3-no-srcport.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
@@ -28,6 +29,7 @@ shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 %patch0 -p1 -b .pie
 %patch1 -p1 -b .sbin-path
 %patch2 -p1 -b .ip-output
+%patch3 -p1 -b .no-srcport
 
 %build
 make PREFIX=/usr
@@ -49,9 +51,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %doc README
 
+%dir %{_sysconfdir}/vpnc
+%{_sysconfdir}/vpnc/vpnc-script
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
 %{_sbindir}/*
-%{_sysconfdir}/vpnc
 %{_mandir}/man8/*
 %dir %{_var}/run/vpnc
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/pid
@@ -59,6 +62,9 @@ rm -rf $RPM_BUILD_ROOT
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/resolv.conf-backup
 
 %changelog
+* Thu Sep 22 2005 Tomas Mraz <tmraz@redhat.com> 0.3.3-4
+- improve compatibility with some Ciscos
+
 * Wed Jun 15 2005 Tomas Mraz <tmraz@redhat.com> 0.3.3-3
 - improve fix_ip_get_output in vpnc-script (#160364)
 

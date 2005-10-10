@@ -1,0 +1,11 @@
+--- vpnc-0.3.3/vpnc.c.no-srcport	2005-05-05 15:24:17.000000000 +0200
++++ vpnc-0.3.3/vpnc.c	2005-09-22 19:11:52.000000000 +0200
+@@ -810,7 +810,7 @@
+ 		l = l->next;
+ 		l->u.id.type = ISAKMP_IPSEC_ID_KEY_ID;
+ 		l->u.id.protocol = IPPROTO_UDP;
+-		l->u.id.port = ntohs(local_port);
++		l->u.id.port = 500; /* this must be 500, not local_port */
+ 		l->u.id.length = strlen(key_id);
+ 		l->u.id.data = xallocc(l->u.id.length);
+ 		memcpy(l->u.id.data, key_id, strlen(key_id));
