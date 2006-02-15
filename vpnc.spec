@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        5
+Release:        6
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -64,6 +64,9 @@ rm -rf $RPM_BUILD_ROOT
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/resolv.conf-backup
 
 %changelog
+* Wed Feb 15 2006 Tomas Mraz <tmraz@redhat.com> 0.3.3-6
+- rebuild with new gcc
+
 * Tue Jan 24 2006 Tomas Mraz <tmraz@redhat.com> 0.3.3-5
 - send the disconnect packet properly (patch by Laurence Moindrot)
 
