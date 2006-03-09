@@ -1,0 +1,489 @@
+--- vpnc-0.3.3/vpnc.c.rekeying	2006-03-09 18:33:04.000000000 +0100
++++ vpnc-0.3.3/vpnc.c	2006-03-09 18:33:40.000000000 +0100
+@@ -60,15 +60,13 @@
+ static uint8_t r_packet[2048];
+ static ssize_t r_length;
+ 
+-extern void vpnc_doit(unsigned long tous_spi,
++extern int vpnc_doit(unsigned long tous_spi,
+ 	const unsigned char *tous_key,
+ 	struct sockaddr_in *tous_dest,
+ 	unsigned long tothem_spi,
+ 	const unsigned char *tothem_key,
+ 	struct sockaddr_in *tothem_dest,
+ 	int tun_fd, int md_algo, int cry_algo,
+-	uint8_t * kill_packet_p, size_t kill_packet_size_p,
+-	struct sockaddr *kill_dest_p,
+ 	uint16_t encap_mode, int isakmp_fd,
+ 	const char *pidfile);
+ 
+@@ -332,6 +330,7 @@
+ 	time_t start = time(NULL);
+ 	time_t end = 0;
+ 	void *realtosend;
++	static uint32_t zero;
+ 
+ 	pfd.fd = sockfd;
+ 	pfd.events = POLLIN;
+@@ -365,8 +364,13 @@
+ 		if (pollresult != 0) {
+ 			recvsize = recv_ignore_dup(recvbuf, recvbufsize);
+ 			end = time(NULL);
+-			if (recvsize != -1)
+-				break;
++			if (recvsize != -1) {
++	        		if (encap_mode == IPSEC_ENCAP_TUNNEL ||
++					 memcmp(recvbuf, &zero, sizeof(zero)) == 0)
++					 /* this hack drops ESP packets on NATed connections
++					    during rekeying, but it shouldn't matter much */ 
++					 break;
++			}
+ 			continue;
+ 		}
+ 		
+@@ -383,7 +387,7 @@
+ 
+ 	if (encap_mode != IPSEC_ENCAP_TUNNEL) {
+ 		recvsize -= 4; /* 4 bytes non-esp marker */
+-		memcpy(recvbuf, recvbuf+4, recvsize);
++		memmove(recvbuf, recvbuf+4, recvsize);
+ 	}
+ 
+ 	/* Wait at least 2s for a response or 4 times the time it took
+@@ -1882,7 +1886,7 @@
+ 	return r;
+ }
+ 
+-static void setup_link(struct sa_block *s)
++static int setup_link(struct sa_block *s)
+ {
+ 	struct isakmp_payload *rp, *us, *ke = NULL, *them, *nonce_r = NULL;
+ 	struct isakmp_packet *r;
+@@ -1893,6 +1897,8 @@
+ 	size_t p_size = 0;
+ 	uint8_t nonce[20], *dh_public = NULL;
+ 	int ipsec_cry_algo = 0, ipsec_hash_algo = 0, i;
++	static int rekey = 0;
++	static int tunnelfd = -1;
+ 
+ 	DEBUG(2, printf("S7.1\n"));
+ 	/* Set up the Diffie-Hellman stuff.  */
+@@ -1944,6 +1950,7 @@
+ 			memcpy(realiv_msgid, s->current_iv_msgid, 4);
+ 		}
+ 
++again:
+ 		DEBUG(2, printf("S7.3\n"));
+ 		reject = unpack_verify_phase2(s, r_packet, r_length, &r, nonce, sizeof(nonce));
+ 
+@@ -1952,6 +1959,13 @@
+ 			&& r->exchange_type == ISAKMP_EXCHANGE_INFORMATIONAL) {
+ 			/* handle notifie responder-lifetime (ignore) */
+ 			/* (broken hash => ignore AUTHENTICATION_FAILED) */
++			if (reject == 0
++				&& r->payload->next->type == ISAKMP_PAYLOAD_D && rekey) {
++				DEBUG(2, printf("ignoring delete old ESP SA notify\n"));
++				r_length = sendrecv(r_packet, sizeof(*r_packet), NULL, 0, 0);
++				goto again;
++			}
++			
+ 			if (reject == 0 && r->payload->next->type != ISAKMP_PAYLOAD_N)
+ 				reject = ISAKMP_N_INVALID_PAYLOAD_TYPE;
+ 
+@@ -2122,51 +2136,20 @@
+ 		nonce_r->u.nonce.data, nonce_r->u.nonce.length);
+ 
+ 	DEBUG(2, printf("S7.7\n"));
+-	/* Create the delete payload, now that we have all the information.  */
+-	{
+-		struct isakmp_payload *d_isakmp, *d_ipsec;
+-		uint32_t del_msgid;
+-
+-		gcry_randomize((uint8_t *) & del_msgid, sizeof(del_msgid), GCRY_WEAK_RANDOM);
+-		d_isakmp = new_isakmp_payload(ISAKMP_PAYLOAD_D);
+-		d_isakmp->u.d.doi = ISAKMP_DOI_IPSEC;
+-		d_isakmp->u.d.protocol = ISAKMP_IPSEC_PROTO_ISAKMP;
+-		d_isakmp->u.d.spi_length = 2 * ISAKMP_COOKIE_LENGTH;
+-		d_isakmp->u.d.num_spi = 1;
+-		d_isakmp->u.d.spi = xallocc(1 * sizeof(uint8_t *));
+-		d_isakmp->u.d.spi[0] = xallocc(2 * ISAKMP_COOKIE_LENGTH);
+-		memcpy(d_isakmp->u.d.spi[0] + ISAKMP_COOKIE_LENGTH * 0, s->i_cookie,
+-			ISAKMP_COOKIE_LENGTH);
+-		memcpy(d_isakmp->u.d.spi[0] + ISAKMP_COOKIE_LENGTH * 1, s->r_cookie,
+-			ISAKMP_COOKIE_LENGTH);
+-		d_ipsec = new_isakmp_payload(ISAKMP_PAYLOAD_D);
+-		d_ipsec->next = d_isakmp;
+-		d_ipsec->u.d.doi = ISAKMP_DOI_IPSEC;
+-		d_ipsec->u.d.protocol = ISAKMP_IPSEC_PROTO_IPSEC_ESP;
+-		d_ipsec->u.d.spi_length = 4;
+-		d_ipsec->u.d.num_spi = 2;
+-		d_ipsec->u.d.spi = xallocc(2 * sizeof(uint8_t *));
+-		d_ipsec->u.d.spi[0] = xallocc(d_ipsec->u.d.spi_length);
+-		memcpy(d_ipsec->u.d.spi[0], &s->tous_esp_spi, 4);
+-		d_ipsec->u.d.spi[1] = xallocc(d_ipsec->u.d.spi_length);
+-		memcpy(d_ipsec->u.d.spi[1], &s->tothem_esp_spi, 4);
+-		phase2_authpacket(s, d_ipsec, ISAKMP_EXCHANGE_INFORMATIONAL,
+-			del_msgid, &s->kill_packet, &s->kill_packet_size,
+-			nonce, sizeof(nonce), nonce_r->u.nonce.data, nonce_r->u.nonce.length);
+-		isakmp_crypt(s, s->kill_packet, s->kill_packet_size, 1);
+-	}
+-	DEBUG(2, printf("S7.8\n"));
+ 
+ 	/* Set up the interface here so it's ready when our acknowledgement
+ 	 * arrives.  */
+-	config_tunnel();
+-	DEBUG(2, printf("S7.9\n"));
++	if (!rekey) {
++	    config_tunnel();
++	}
++	
++	DEBUG(2, printf("S7.8\n"));
+ 	{
+ 		uint8_t *tous_keys, *tothem_keys;
+ 		struct sockaddr_in tothem_dest, tous_dest;
+ 		unsigned char *dh_shared_secret = NULL;
+-		int tunnelfd = sockfd;
+-
++		uint16_t em = encap_mode;
++		
+ 		if (dh_grp) {
+ 			/* Determine the shared secret.  */
+ 			dh_shared_secret = xallocc(dh_getlen(dh_grp));
+@@ -2186,21 +2169,66 @@
+ 			nonce, sizeof(nonce), nonce_r->u.nonce.data, nonce_r->u.nonce.length);
+ 		memcpy(&tous_dest, dest_addr, sizeof(tous_dest));
+ 		if (opt_udpencap && s->peer_udpencap_port) {
+-			close(tunnelfd);
+-			tunnelfd = make_socket(htons(opt_udpencapport));
++			if (!rekey) {
++				tunnelfd = make_socket(htons(opt_udpencapport));
++			}
+ 			tous_dest.sin_port = htons(s->peer_udpencap_port);
+-			encap_mode = IPSEC_ENCAP_UDP_TUNNEL;
++			em = IPSEC_ENCAP_UDP_TUNNEL;
++		} else if (em != IPSEC_ENCAP_TUNNEL) {
++			tunnelfd = sockfd;
++		} else {
++			if (!rekey) {
++			        tunnelfd = socket(PF_INET, SOCK_RAW, IPPROTO_ESP);
++				if (tunnelfd == -1) {
++					error(1, errno, "socket(SOCK_RAW) failed");
++				}
++			}
+ 		}
+ 		if (dh_grp)
+ 			group_free(dh_grp);
+-		DEBUG(2, printf("S7.10\n"));
+-		vpnc_doit(s->tous_esp_spi, tous_keys, &tothem_dest,
++		DEBUG(2, printf("S7.9\n"));
++		reject = vpnc_doit(s->tous_esp_spi, tous_keys, &tothem_dest,
+ 			s->tothem_esp_spi, tothem_keys, (struct sockaddr_in *)&tous_dest,
+-			s->tun_fd, ipsec_hash_algo, ipsec_cry_algo,
+-			s->kill_packet, s->kill_packet_size, dest_addr,
+-			encap_mode, tunnelfd,
++			s->tun_fd, ipsec_hash_algo, ipsec_cry_algo, em, tunnelfd,
+ 			config[CONFIG_PID_FILE]);
++		rekey = reject == 0;
+ 	}
++
++	DEBUG(2, printf("S7.10\n"));
++	/* Create and send the delete payload.  */
++	if (reject != 0) {
++		struct isakmp_payload *d_isakmp = NULL, *d_ipsec;
++		uint32_t del_msgid;
++
++		gcry_create_nonce((uint8_t *) & del_msgid, sizeof(del_msgid));
++		d_isakmp = new_isakmp_payload(ISAKMP_PAYLOAD_D);
++		d_isakmp->u.d.doi = ISAKMP_DOI_IPSEC;
++		d_isakmp->u.d.protocol = ISAKMP_IPSEC_PROTO_ISAKMP;
++		d_isakmp->u.d.spi_length = 2 * ISAKMP_COOKIE_LENGTH;
++		d_isakmp->u.d.num_spi = 1;
++		d_isakmp->u.d.spi = xallocc(1 * sizeof(uint8_t *));
++		d_isakmp->u.d.spi[0] = xallocc(2 * ISAKMP_COOKIE_LENGTH);
++		memcpy(d_isakmp->u.d.spi[0] + ISAKMP_COOKIE_LENGTH * 0, s->i_cookie,
++			ISAKMP_COOKIE_LENGTH);
++		memcpy(d_isakmp->u.d.spi[0] + ISAKMP_COOKIE_LENGTH * 1, s->r_cookie,
++			ISAKMP_COOKIE_LENGTH);
++
++		d_ipsec = new_isakmp_payload(ISAKMP_PAYLOAD_D);
++		d_ipsec->next = d_isakmp;
++		d_ipsec->u.d.doi = ISAKMP_DOI_IPSEC;
++		d_ipsec->u.d.protocol = ISAKMP_IPSEC_PROTO_IPSEC_ESP;
++		d_ipsec->u.d.spi_length = 4;
++		d_ipsec->u.d.num_spi = 2;
++		d_ipsec->u.d.spi = xallocc(2 * sizeof(uint8_t *));
++		d_ipsec->u.d.spi[0] = xallocc(d_ipsec->u.d.spi_length);
++		memcpy(d_ipsec->u.d.spi[0], &s->tous_esp_spi, 4);
++		d_ipsec->u.d.spi[1] = xallocc(d_ipsec->u.d.spi_length);
++		memcpy(d_ipsec->u.d.spi[1], &s->tothem_esp_spi, 4);
++		sendrecv_phase2(s, d_ipsec, ISAKMP_EXCHANGE_INFORMATIONAL,
++			del_msgid, 1, NULL, NULL,
++			NULL, 0, NULL, 0);
++	}
++	return reject;
+ }
+ 
+ int main(int argc, char **argv)
+@@ -2239,7 +2267,9 @@
+ 			do_load_balance = do_phase_2_config(oursa);
+ 	} while (do_load_balance);
+ 	DEBUG(2, printf("S7\n"));
+-	setup_link(oursa);
++	while(setup_link(oursa) == 0) {
++	    DEBUG(2, printf("S7 Rekeying\n"));
++	}
+ 	DEBUG(2, printf("S8\n"));
+ 	setenv("reason", "disconnect", 1);
+ 	system(config[CONFIG_SCRIPT]);
+--- vpnc-0.3.3/config.c.rekeying	2005-05-01 22:06:36.000000000 +0200
++++ vpnc-0.3.3/config.c	2006-03-09 18:33:04.000000000 +0100
+@@ -56,6 +56,8 @@
+ int opt_1des;
+ int opt_udpencap;
+ uint16_t opt_udpencapport;
++int opt_nat_keepalive;
++int opt_rekey_interval;
+ 
+ void hex_dump(const char *str, const void *data, ssize_t len)
+ {
+@@ -113,6 +115,16 @@
+ 	return "10000";
+ }
+ 
++static const char *config_def_nat_keepalive(void)
++{
++	return "0";
++}
++
++static const char *config_def_rekey_interval(void)
++{
++	return "0";
++}
++
+ static const char *config_def_app_version(void)
+ {
+ 	struct utsname uts;
+@@ -299,6 +311,20 @@
+ 		"disable use of NAT-T",
+ 		NULL
+ 	}, {
++		CONFIG_NAT_KEEPALIVE, 1, 1,
++		"--nat-keepalive",
++		"NAT-Keepalive packet interval ",
++		"<Seconds>",
++		"If non-zero, send out NAT-Keepalive packets at specified interval",
++		config_def_nat_keepalive
++	}, {
++		CONFIG_REKEY_INTERVAL, 1, 1,
++		"--rekey-interval",
++		"Rekeying interval ",
++		"<Seconds>",
++		"If non-zero, rekey the connection at specified interval",
++		config_def_rekey_interval
++	}, {
+ 		CONFIG_NON_INTERACTIVE, 0, 1,
+ 		"--non-inter",
+ 		"Noninteractive",
+@@ -535,6 +561,8 @@
+ 		opt_1des = (config[CONFIG_ENABLE_1DES]) ? 1 : 0;
+ 		opt_udpencap=(config[CONFIG_UDP_ENCAP]) ? 1 : 0;
+ 		opt_udpencapport=atoi(config[CONFIG_UDP_ENCAP_PORT]);
++		opt_nat_keepalive=atoi(config[CONFIG_NAT_KEEPALIVE]);
++		opt_rekey_interval=atoi(config[CONFIG_REKEY_INTERVAL]);
+ 	}
+ 
+ 	if (opt_debug >= 99) {
+--- vpnc-0.3.3/tunip.c.rekeying	2005-05-05 12:25:00.000000000 +0200
++++ vpnc-0.3.3/tunip.c	2006-03-09 18:33:04.000000000 +0100
+@@ -333,18 +333,14 @@
+ 	return 1;
+ }
+ 
+-int encap_esp_new(struct encap_method *encap, unsigned char proto)
++int encap_esp_new(struct encap_method *encap, int encap_fd)
+ {
+ #ifdef IP_HDRINCL
+ 	int hincl = 1;
+ #endif
+ 
+-	encap->fd = socket(PF_INET, SOCK_RAW, proto);
++	encap->fd = encap_fd;
+ 
+-	if (encap->fd == -1) {
+-		perror("socket(SOCK_RAW)");
+-		return -1;
+-	}
+ #ifdef IP_HDRINCL
+ 	if (setsockopt(encap->fd, IPPROTO_IP, IP_HDRINCL, &hincl, sizeof(hincl))
+ 		== -1) {
+@@ -766,15 +762,16 @@
+ }
+ 
+ static uint8_t volatile do_kill;
+-static uint8_t *kill_packet;
+-static size_t kill_packet_size;
+-static struct sockaddr *kill_dest;
+ 
+-static void vpnc_main_loop(struct peer_desc *peer, struct encap_method *meth, int tun_fd, const char *pidfile)
++#define VPNC_POLL_TIMEOUT 2000
++
++static int vpnc_main_loop(struct peer_desc *peer, struct encap_method *meth, int tun_fd, const char *pidfile)
+ {
+-	int sock;
+ 	struct pollfd pollfds[2];
++	time_t keepalive, rekey, now;
++	int rv = 1;
+ 
++	keepalive = rekey = time(NULL);
+ 	pollfds[0].fd = tun_fd;
+ 	pollfds[0].events = POLLIN;
+ 	pollfds[1].fd = encap_get_fd(meth);
+@@ -784,13 +781,26 @@
+ 		int presult;
+ 
+ 		do {
+-			presult = poll(pollfds, sizeof(pollfds) / sizeof(pollfds[0]), -1);
++			presult = poll(pollfds, sizeof(pollfds) / sizeof(pollfds[0]), VPNC_POLL_TIMEOUT);
+ 		} while (presult == -1 && errno == EINTR && !do_kill);
+ 		if (presult == -1) {
+ 			syslog(LOG_ERR, "poll: %m");
+ 			continue;
+ 		}
+ 
++		now = time(NULL);
++		if (opt_nat_keepalive && now-keepalive >= opt_nat_keepalive) {
++			const char *payload = "\xff";
++			sendto(meth->fd, payload, 1, 0,
++				(struct sockaddr *)&peer->remote_sa->dest, 
++				sizeof(peer->remote_sa->dest));
++		}
++
++		if (opt_rekey_interval && now-rekey >= opt_rekey_interval) {
++			rv = 0;
++			do_kill = 255;
++		}
++
+ 		if (pollfds[0].revents & POLLIN) {
+ 			int pack;
+ 
+@@ -863,16 +873,13 @@
+ 		}
+ 	}
+ 	
+-	sock = socket(AF_INET, SOCK_DGRAM, 0);
+-	if (sock >= 0) {
+-		sendto(sock, kill_packet, kill_packet_size, 0,
+-			kill_dest, sizeof(struct sockaddr_in));
+-		close(sock);
+-	}
+-	tun_close(oursa->tun_fd, oursa->tun_name);
+-	if (pidfile)
+-		unlink(pidfile); /* ignore errors */
+-	syslog(LOG_NOTICE, "terminated");
++	if (rv != 0) {
++		tun_close(oursa->tun_fd, oursa->tun_name);
++		if (pidfile)
++			unlink(pidfile); /* ignore errors */
++		syslog(LOG_NOTICE, "terminated");
++	}
++	return rv;
+ }
+ 
+ void killit(int signum)
+@@ -898,7 +905,7 @@
+ 	fclose(pf);
+ }
+ 
+-void
++int
+ vpnc_doit(unsigned long tous_spi,
+ 	const unsigned char *tous_key,
+ 	struct sockaddr_in *tous_dest,
+@@ -906,9 +913,7 @@
+ 	const unsigned char *tothem_key,
+ 	struct sockaddr_in *tothem_dest,
+ 	int tun_fd, int md_algo, int cry_algo,
+-	uint8_t * kill_packet_p, size_t kill_packet_size_p,
+-	struct sockaddr *kill_dest_p,
+-	uint16_t encap_mode, int udp_fd,
++	uint16_t encap_mode, int encap_fd,
+ 	const char *pidfile)
+ {
+ 	struct encap_method meth;
+@@ -918,12 +923,13 @@
+ 
+ 	switch (encap_mode) {
+ 		case IPSEC_ENCAP_TUNNEL:
+-			if (encap_esp_new(&meth, IPPROTO_ESP) == -1)
++			if (encap_esp_new(&meth, encap_fd) == -1)
+ 				exit(1);
++			opt_nat_keepalive = 0;
+ 			break;
+ 		case IPSEC_ENCAP_UDP_TUNNEL:
+ 		case IPSEC_ENCAP_UDP_TUNNEL_OLD:
+-			if (encap_udp_new(&meth, udp_fd) == -1)
++			if (encap_udp_new(&meth, encap_fd) == -1)
+ 				exit(1);
+ 			break;
+ 		default:
+@@ -984,11 +990,6 @@
+ 	vpnpeer.local_sa = &tous_sa;
+ 	vpnpeer.remote_sa = &tothem_sa;
+ 
+-	do_kill = 0;
+-	kill_packet = kill_packet_p;
+-	kill_packet_size = kill_packet_size_p;
+-	kill_dest = kill_dest_p;
+-
+ 	signal(SIGHUP, killit);
+ 	signal(SIGINT, killit);
+ 	signal(SIGTERM, killit);
+@@ -1000,7 +1001,7 @@
+ 	chdir("/");
+ 
+ 	setsid();
+-	if (!opt_nd) {
++	if (do_kill == 0 && !opt_nd) {  /* do_kill != 0 -> rekeying */
+ 		pid_t pid;
+ 		if ((pid = fork()) < 0) {
+ 			fprintf(stderr, "Warning, could not fork the child process!\n");
+@@ -1019,5 +1020,7 @@
+ 		openlog("vpnc", LOG_PID, LOG_DAEMON);
+ 	}
+ 
+-	vpnc_main_loop(&vpnpeer, &meth, tun_fd, (!opt_nd) ? pidfile : NULL);
++	do_kill = 0;
++
++	return vpnc_main_loop(&vpnpeer, &meth, tun_fd, (!opt_nd) ? pidfile : NULL);
+ }
+--- vpnc-0.3.3/config.h.rekeying	2005-05-01 22:06:45.000000000 +0200
++++ vpnc-0.3.3/config.h	2006-03-09 18:33:04.000000000 +0100
+@@ -44,6 +44,8 @@
+ 	CONFIG_UDP_ENCAP,
+ 	CONFIG_UDP_ENCAP_PORT,
+ 	CONFIG_DISABLE_NATT,
++	CONFIG_NAT_KEEPALIVE,
++	CONFIG_REKEY_INTERVAL,
+ 	LAST_CONFIG
+ };
+ 
+@@ -60,6 +62,8 @@
+ extern int opt_1des;
+ extern int opt_udpencap;
+ extern uint16_t opt_udpencapport;
++extern int opt_nat_keepalive;
++extern int opt_rekey_interval;
+ 
+ #define DEBUG(lvl, a) do {if (opt_debug >= (lvl)) {a;}} while (0)
+ 
+--- vpnc-0.3.3/vpnc.h.rekeying	2004-11-22 01:11:55.000000000 +0100
++++ vpnc-0.3.3/vpnc.h	2006-03-09 18:33:04.000000000 +0100
+@@ -46,8 +46,6 @@
+ 	uint8_t *current_iv;
+ 	uint8_t our_address[4], our_netmask[4];
+ 	uint32_t tous_esp_spi, tothem_esp_spi;
+-	uint8_t *kill_packet;
+-	size_t kill_packet_size;
+ 	uint16_t peer_udpencap_port;
+ 	int do_pfs;
+ };

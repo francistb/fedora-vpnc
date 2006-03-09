@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        6
+Release:        7
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -13,7 +13,8 @@ Patch0:         vpnc-0.3.2-pie.patch
 Patch1:		vpnc-0.3.3-sbin-path.patch
 Patch2:		vpnc-0.3.3-ip-output.patch
 Patch3:		vpnc-0.3.3-no-srcport.patch
-Patch4:		vpnc-0.3.3-disconnect.patch
+Patch4:		vpnc-0.3.3-rekeying.patch
+
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
@@ -31,7 +32,7 @@ shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 %patch1 -p1 -b .sbin-path
 %patch2 -p1 -b .ip-output
 %patch3 -p1 -b .no-srcport
-%patch4 -p1 -b .disconnect
+%patch4 -p1 -b .rekeying
 
 %build
 make PREFIX=/usr
@@ -64,6 +65,11 @@ rm -rf $RPM_BUILD_ROOT
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/resolv.conf-backup
 
 %changelog
+* Thu Mar  9 2006 Tomas Mraz <tmraz@redhat.com> 0.3.3-7
+- add basic rekeying support (the patch includes NAT keepalive support
+  by Brian Downing)
+- dropped disconnect patch (solved differently)
+
 * Wed Feb 15 2006 Tomas Mraz <tmraz@redhat.com> 0.3.3-6
 - rebuild with new gcc
 
