@@ -1,5 +1,5 @@
---- vpnc-0.3.3/vpnc.c.rekeying	2006-03-09 18:33:04.000000000 +0100
-+++ vpnc-0.3.3/vpnc.c	2006-03-09 18:33:40.000000000 +0100
+--- vpnc-0.3.3/vpnc.c.rekeying	2006-03-14 22:53:00.000000000 +0100
++++ vpnc-0.3.3/vpnc.c	2006-03-14 22:54:16.000000000 +0100
 @@ -60,15 +60,13 @@
  static uint8_t r_packet[2048];
  static ssize_t r_length;
@@ -50,7 +50,39 @@
  	}
  
  	/* Wait at least 2s for a response or 4 times the time it took
-@@ -1882,7 +1886,7 @@
+@@ -396,6 +400,31 @@
+ 	return recvsize;
+ }
+ 
++static void
++flushrecv(void)
++{
++	struct pollfd pfd;
++	int recvsize = -1;
++	struct sockaddr_in recvaddr;
++	socklen_t recvaddr_size = sizeof(recvaddr);
++	uint8_t r_packet[2048];
++
++	pfd.fd = sockfd;
++	pfd.events = POLLIN;
++
++	for (;;) {
++		int pollresult;
++
++		pollresult = poll(&pfd, 1, 0);
++		
++		if (pollresult <= 0)
++			return;
++
++		recvsize = recvfrom(sockfd, r_packet, sizeof(r_packet), 0,
++		(struct sockaddr *)&recvaddr, &recvaddr_size);
++	}
++}
++
+ int isakmp_crypt(struct sa_block *s, uint8_t * block, size_t blocklen, int enc)
+ {
+ 	unsigned char *new_iv, *iv = NULL;
+@@ -1882,7 +1911,7 @@
  	return r;
  }
  
@@ -59,7 +91,7 @@
  {
  	struct isakmp_payload *rp, *us, *ke = NULL, *them, *nonce_r = NULL;
  	struct isakmp_packet *r;
-@@ -1893,6 +1897,8 @@
+@@ -1893,6 +1922,8 @@
  	size_t p_size = 0;
  	uint8_t nonce[20], *dh_public = NULL;
  	int ipsec_cry_algo = 0, ipsec_hash_algo = 0, i;
@@ -68,15 +100,30 @@
  
  	DEBUG(2, printf("S7.1\n"));
  	/* Set up the Diffie-Hellman stuff.  */
-@@ -1944,6 +1950,7 @@
- 			memcpy(realiv_msgid, s->current_iv_msgid, 4);
- 		}
+@@ -1934,6 +1965,11 @@
+ 		msgid = 1;
  
-+again:
+ 	DEBUG(2, printf("S7.2\n"));
++	
++	if(rekey) {
++		flushrecv();
++	}
++	
+ 	for (i = 0; i < 4; i++) {
+ 		sendrecv_phase2(s, rp, ISAKMP_EXCHANGE_IKE_QUICK,
+ 			msgid, 0, &p_flat, &p_size, 0, 0, 0, 0);
+@@ -1946,12 +1982,24 @@
+ 
  		DEBUG(2, printf("S7.3\n"));
  		reject = unpack_verify_phase2(s, r_packet, r_length, &r, nonce, sizeof(nonce));
++		if (reject != 0 && reject != ISAKMP_N_AUTHENTICATION_FAILED) {
++			DEBUG(2, printf("ignoring bad packet, retrying\n"));
++			r_length = sendrecv(r_packet, sizeof(*r_packet), NULL, 0, 0);
++			continue;
++		}
  
-@@ -1952,6 +1959,13 @@
+ 		DEBUG(2, printf("S7.4\n"));
+ 		if (((reject == 0) || (reject == ISAKMP_N_AUTHENTICATION_FAILED))
  			&& r->exchange_type == ISAKMP_EXCHANGE_INFORMATIONAL) {
  			/* handle notifie responder-lifetime (ignore) */
  			/* (broken hash => ignore AUTHENTICATION_FAILED) */
@@ -84,13 +131,13 @@
 +				&& r->payload->next->type == ISAKMP_PAYLOAD_D && rekey) {
 +				DEBUG(2, printf("ignoring delete old ESP SA notify\n"));
 +				r_length = sendrecv(r_packet, sizeof(*r_packet), NULL, 0, 0);
-+				goto again;
++				continue;
 +			}
 +			
  			if (reject == 0 && r->payload->next->type != ISAKMP_PAYLOAD_N)
  				reject = ISAKMP_N_INVALID_PAYLOAD_TYPE;
  
-@@ -2122,51 +2136,20 @@
+@@ -2122,51 +2170,20 @@
  		nonce_r->u.nonce.data, nonce_r->u.nonce.length);
  
  	DEBUG(2, printf("S7.7\n"));
@@ -149,7 +196,7 @@
  		if (dh_grp) {
  			/* Determine the shared secret.  */
  			dh_shared_secret = xallocc(dh_getlen(dh_grp));
-@@ -2186,21 +2169,66 @@
+@@ -2186,21 +2203,66 @@
  			nonce, sizeof(nonce), nonce_r->u.nonce.data, nonce_r->u.nonce.length);
  		memcpy(&tous_dest, dest_addr, sizeof(tous_dest));
  		if (opt_udpencap && s->peer_udpencap_port) {
@@ -184,7 +231,7 @@
 +			s->tun_fd, ipsec_hash_algo, ipsec_cry_algo, em, tunnelfd,
  			config[CONFIG_PID_FILE]);
 +		rekey = reject == 0;
- 	}
++	}
 +
 +	DEBUG(2, printf("S7.10\n"));
 +	/* Create and send the delete payload.  */
@@ -219,12 +266,12 @@
 +		sendrecv_phase2(s, d_ipsec, ISAKMP_EXCHANGE_INFORMATIONAL,
 +			del_msgid, 1, NULL, NULL,
 +			NULL, 0, NULL, 0);
-+	}
+ 	}
 +	return reject;
  }
  
  int main(int argc, char **argv)
-@@ -2239,7 +2267,9 @@
+@@ -2239,7 +2301,9 @@
  			do_load_balance = do_phase_2_config(oursa);
  	} while (do_load_balance);
  	DEBUG(2, printf("S7\n"));
@@ -236,7 +283,7 @@
  	setenv("reason", "disconnect", 1);
  	system(config[CONFIG_SCRIPT]);
 --- vpnc-0.3.3/config.c.rekeying	2005-05-01 22:06:36.000000000 +0200
-+++ vpnc-0.3.3/config.c	2006-03-09 18:33:04.000000000 +0100
++++ vpnc-0.3.3/config.c	2006-03-14 22:53:00.000000000 +0100
 @@ -56,6 +56,8 @@
  int opt_1des;
  int opt_udpencap;
@@ -294,7 +341,7 @@
  
  	if (opt_debug >= 99) {
 --- vpnc-0.3.3/tunip.c.rekeying	2005-05-05 12:25:00.000000000 +0200
-+++ vpnc-0.3.3/tunip.c	2006-03-09 18:33:04.000000000 +0100
++++ vpnc-0.3.3/tunip.c	2006-03-14 22:53:00.000000000 +0100
 @@ -333,18 +333,14 @@
  	return 1;
  }
@@ -457,7 +504,7 @@
 +	return vpnc_main_loop(&vpnpeer, &meth, tun_fd, (!opt_nd) ? pidfile : NULL);
  }
 --- vpnc-0.3.3/config.h.rekeying	2005-05-01 22:06:45.000000000 +0200
-+++ vpnc-0.3.3/config.h	2006-03-09 18:33:04.000000000 +0100
++++ vpnc-0.3.3/config.h	2006-03-14 22:53:00.000000000 +0100
 @@ -44,6 +44,8 @@
  	CONFIG_UDP_ENCAP,
  	CONFIG_UDP_ENCAP_PORT,
@@ -477,7 +524,7 @@
  #define DEBUG(lvl, a) do {if (opt_debug >= (lvl)) {a;}} while (0)
  
 --- vpnc-0.3.3/vpnc.h.rekeying	2004-11-22 01:11:55.000000000 +0100
-+++ vpnc-0.3.3/vpnc.h	2006-03-09 18:33:04.000000000 +0100
++++ vpnc-0.3.3/vpnc.h	2006-03-14 22:53:00.000000000 +0100
 @@ -46,8 +46,6 @@
  	uint8_t *current_iv;
  	uint8_t our_address[4], our_netmask[4];
