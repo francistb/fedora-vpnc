@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        8
+Release:        9
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -36,7 +36,7 @@ shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 
 %build
 %ifarch x86_64
-RPM_OPT_FLAGS=$(echo $RPM_OPT_FLAGS | sed s/-f-stack-protector//g)
+RPM_OPT_FLAGS=$(echo $RPM_OPT_FLAGS | sed s/-fstack-protector//g)
 %endif
 make PREFIX=/usr
 
@@ -68,6 +68,9 @@ rm -rf $RPM_BUILD_ROOT
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/resolv.conf-backup
 
 %changelog
+* Wed Jun  7 2006 Tomas Mraz <tmraz@redhat.com> 0.3.3-9
+- drop the -fstack-protector not -f-stack-protector
+
 * Tue May 30 2006 Tomas Mraz <tmraz@redhat.com> 0.3.3-8
 - drop -fstack-protector from x86_64 build (workaround for #172145)
 - make rekeying a little bit better
