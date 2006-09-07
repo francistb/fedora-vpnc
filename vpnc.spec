@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        9
+Release:        10
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -68,6 +68,9 @@ rm -rf $RPM_BUILD_ROOT
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/resolv.conf-backup
 
 %changelog
+* Thu Sep  7 2006 Tomas Mraz <tmraz@redhat.com> - 0.3.3-10
+- rebuilt for FC6
+
 * Wed Jun  7 2006 Tomas Mraz <tmraz@redhat.com> 0.3.3-9
 - drop the -fstack-protector not -f-stack-protector
 
