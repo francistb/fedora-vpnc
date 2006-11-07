@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        12
+Release:        13%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -14,6 +14,7 @@ Patch1:		vpnc-0.3.3-sbin-path.patch
 Patch2:		vpnc-0.3.3-ip-output.patch
 Patch3:		vpnc-0.3.3-no-srcport.patch
 Patch4:		vpnc-0.3.3-rekeying.patch
+Patch5:		vpnc-0.3.3-cloexec.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -33,6 +34,7 @@ shared-secret IPSec authentication, 3DES, MD5, and IP tunneling.
 %patch2 -p1 -b .ip-output
 %patch3 -p1 -b .no-srcport
 %patch4 -p1 -b .rekeying
+%patch5 -p1 -b .cloexec
 
 %build
 make PREFIX=/usr
@@ -65,6 +67,9 @@ rm -rf $RPM_BUILD_ROOT
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/resolv.conf-backup
 
 %changelog
+* Tue Nov  7 2006 Tomas Mraz <tmraz@redhat.com> - 0.3.3-13
+- don't leak socket fds
+
 * Tue Sep 12 2006 Tomas Mraz <tmraz@redhat.com> - 0.3.3-12
 - drop hoplimit from ip route output (#205923)
 - let's try enabling -fstack-protector again, seems to work now
