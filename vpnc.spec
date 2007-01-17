@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.3.3
-Release:        14%{?dist}
+Release:        15%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -12,6 +12,7 @@ Source1:        generic-vpnc.conf
 Source2:	vpnc.consolehelper
 Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
+Source5:	vpnc-helper
 Patch0:         vpnc-0.3.2-pie.patch
 Patch1:		vpnc-0.3.3-sbin-path.patch
 Patch2:		vpnc-0.3.3-ip-output.patch
@@ -70,6 +71,8 @@ install -Dp -m 0644 %{SOURCE4} \
     $RPM_BUILD_ROOT%{_sysconfdir}/pam.d/vpnc
 install -Dp -m 0644 %{SOURCE4} \
     $RPM_BUILD_ROOT%{_sysconfdir}/pam.d/vpnc-disconnect
+install -m 0755 %{SOURCE5} \
+    $RPM_BUILD_ROOT%{_sbindir}/vpnc-helper
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc-disconnect
@@ -82,9 +85,10 @@ rm -rf $RPM_BUILD_ROOT
 %doc README COPYING
 
 %dir %{_sysconfdir}/vpnc
-%{_sysconfdir}/vpnc/vpnc-script
+%config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
-%{_sbindir}/*
+%{_sbindir}/vpnc
+%{_sbindir}/vpnc-disconnect
 %{_mandir}/man8/*
 %dir %{_var}/run/vpnc
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/pid
@@ -96,8 +100,13 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/security/console.apps/vpnc*
 %config(noreplace) %{_sysconfdir}/pam.d/vpnc*
 %{_bindir}/vpnc*
+%{_sbindir}/vpnc-helper
 
 %changelog
+* Wed Jan 17 2007 Tomas Mraz <tmraz@redhat.com> - 0.3.3-15
+- do not overwrite personalized vpnc scripts (#195842)
+- we must not allow commandline options to vpnc when run through consolehelper
+
 * Wed Jan 17 2007 Tomas Mraz <tmraz@redhat.com> - 0.3.3-14
 - add consoleuser subpackage (#160571)
 - fix permissions on manpage (#222578)
