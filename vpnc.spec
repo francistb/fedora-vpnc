@@ -1,24 +1,21 @@
 Name:           vpnc
-Version:        0.3.3
-Release:        15%{?dist}
+Version:        0.4.0
+Release:        1%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
 Group:          Applications/Internet
 License:        GPL
 URL:            http://www.unix-ag.uni-kl.de/~massar/vpnc/
-Source0:        vpnc-0.3.3.tar.gz
+Source0:        http://www.unix-ag.uni-kl.de/~massar/vpnc/%{name}-%{version}.tar.gz
 Source1:        generic-vpnc.conf
 Source2:	vpnc.consolehelper
 Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
-Patch0:         vpnc-0.3.2-pie.patch
+Patch0:         vpnc-0.4.0-pie.patch
 Patch1:		vpnc-0.3.3-sbin-path.patch
-Patch2:		vpnc-0.3.3-ip-output.patch
-Patch3:		vpnc-0.3.3-no-srcport.patch
-Patch4:		vpnc-0.3.3-rekeying.patch
-Patch5:		vpnc-0.3.3-cloexec.patch
+Patch2:		vpnc-0.4.0-cloexec.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -45,10 +42,7 @@ switching to the root account.
 %setup -q
 %patch0 -p1 -b .pie
 %patch1 -p1 -b .sbin-path
-%patch2 -p1 -b .ip-output
-%patch3 -p1 -b .no-srcport
-%patch4 -p1 -b .rekeying
-%patch5 -p1 -b .cloexec
+%patch2 -p1 -b .cloexec
 
 %build
 make PREFIX=/usr
@@ -56,9 +50,9 @@ make PREFIX=/usr
 %install
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR="$RPM_BUILD_ROOT" PREFIX=/usr
+rm -f $RPM_BUILD_ROOT%{_bindir}/pcf2vpnc
 chmod 0644 $RPM_BUILD_ROOT%{_mandir}/man8/vpnc.8
 install -m 0600 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/default.conf
-rm $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/vpnc.conf
 mkdir -p $RPM_BUILD_ROOT%{_var}/run/vpnc
 touch $RPM_BUILD_ROOT%{_var}/run/vpnc/pid \
       $RPM_BUILD_ROOT%{_var}/run/vpnc/defaultroute \
@@ -82,7 +76,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc README COPYING
+%doc README COPYING pcf2vpnc
 
 %dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
@@ -103,6 +97,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Mon Feb 26 2007 Tomas Mraz <tmraz@redhat.com> - 0.4.0-1
+- upgrade to new upstream version
+
 * Wed Jan 17 2007 Tomas Mraz <tmraz@redhat.com> - 0.3.3-15
 - do not overwrite personalized vpnc scripts (#195842)
 - we must not allow commandline options to vpnc when run through consolehelper
