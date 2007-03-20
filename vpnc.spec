@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.4.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -45,6 +45,9 @@ switching to the root account.
 %patch2 -p1 -b .cloexec
 
 %build
+%ifarch x86_64
+RPM_OPT_FLAGS=$(echo $RPM_OPT_FLAGS | sed s/-fstack-protector//g)
+%endif
 make PREFIX=/usr
 
 %install
@@ -97,6 +100,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Tue Mar 20 2007 Tomas Mraz <tmraz@redhat.com> - 0.4.0-2
+- -fstack-protector miscompilation on x86_64 is back (#232565)
+
 * Mon Feb 26 2007 Tomas Mraz <tmraz@redhat.com> - 0.4.0-1
 - upgrade to new upstream version
 
