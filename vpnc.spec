@@ -1,11 +1,11 @@
 Name:           vpnc
 Version:        0.4.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
 Group:          Applications/Internet
-License:        GPL
+License:        GPLv2+
 URL:            http://www.unix-ag.uni-kl.de/~massar/vpnc/
 Source0:        http://www.unix-ag.uni-kl.de/~massar/vpnc/%{name}-%{version}.tar.gz
 Source1:        generic-vpnc.conf
@@ -100,6 +100,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Wed Aug 22 2007 Tomas Mraz <tmraz@redhat.com> - 0.4.0-3
+- license tag fix
+
 * Tue Mar 20 2007 Tomas Mraz <tmraz@redhat.com> - 0.4.0-2
 - -fstack-protector miscompilation on x86_64 is back (#232565)
 
