@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.4.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -16,6 +16,7 @@ Source5:	vpnc-helper
 Patch0:         vpnc-0.4.0-pie.patch
 Patch1:		vpnc-0.3.3-sbin-path.patch
 Patch2:		vpnc-0.4.0-cloexec.patch
+Patch3:		vpnc-0.4.0-sizeofbug.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -43,11 +44,9 @@ switching to the root account.
 %patch0 -p1 -b .pie
 %patch1 -p1 -b .sbin-path
 %patch2 -p1 -b .cloexec
+%patch3 -p1 -b .sizeofbug
 
 %build
-%ifarch x86_64
-RPM_OPT_FLAGS=$(echo $RPM_OPT_FLAGS | sed s/-fstack-protector//g)
-%endif
 make PREFIX=/usr
 
 %install
@@ -100,6 +99,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Mon Sep  3 2007 Tomas Mraz <tmraz@redhat.com> - 0.4.0-4
+- fix long standing bug causing problems on x86_64 (#232565) now for real
+
 * Wed Aug 22 2007 Tomas Mraz <tmraz@redhat.com> - 0.4.0-3
 - license tag fix
 
