@@ -1,6 +1,6 @@
 Name:           vpnc
-Version:        0.4.0
-Release:        4%{?dist}
+Version:        0.5.1
+Release:        1%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -13,10 +13,7 @@ Source2:	vpnc.consolehelper
 Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
-Patch0:         vpnc-0.4.0-pie.patch
-Patch1:		vpnc-0.3.3-sbin-path.patch
 Patch2:		vpnc-0.4.0-cloexec.patch
-Patch3:		vpnc-0.4.0-sizeofbug.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -41,18 +38,16 @@ switching to the root account.
 
 %prep
 %setup -q
-%patch0 -p1 -b .pie
-%patch1 -p1 -b .sbin-path
 %patch2 -p1 -b .cloexec
-%patch3 -p1 -b .sizeofbug
 
 %build
-make PREFIX=/usr
+CFLAGS="$RPM_OPT_FLAGS -fPIE" LDFLAGS="$RPM_OPT_FLAGS -pie" make PREFIX=/usr 
 
 %install
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR="$RPM_BUILD_ROOT" PREFIX=/usr
 rm -f $RPM_BUILD_ROOT%{_bindir}/pcf2vpnc
+rm -f $RPM_BUILD_ROOT%{_mandir}/man1/pcf2vpnc.1
 chmod 0644 $RPM_BUILD_ROOT%{_mandir}/man8/vpnc.8
 install -m 0600 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/default.conf
 mkdir -p $RPM_BUILD_ROOT%{_var}/run/vpnc
@@ -78,14 +73,16 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc README COPYING pcf2vpnc
+%doc README COPYING pcf2vpnc pcf2vpnc.1
 
 %dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
 %{_sbindir}/vpnc
+%{_bindir}/cisco-decrypt
 %{_sbindir}/vpnc-disconnect
-%{_mandir}/man8/*
+%{_mandir}/man8/vpnc.*
+%{_mandir}/man1/cisco-decrypt.*
 %dir %{_var}/run/vpnc
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/pid
 %ghost %verify(not md5 size mtime) %{_var}/run/vpnc/defaultroute
@@ -99,6 +96,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Thu Sep 20 2007 Tomas Mraz <tmraz@redhat.com> - 0.5.1-1
+- upgrade to latest upstream
+
 * Mon Sep  3 2007 Tomas Mraz <tmraz@redhat.com> - 0.4.0-4
 - fix long standing bug causing problems on x86_64 (#232565) now for real
 
