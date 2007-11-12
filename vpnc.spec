@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -14,6 +14,7 @@ Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
 Patch2:		vpnc-0.4.0-cloexec.patch
+Patch3:		vpnc-0.5.1-dpd.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -39,6 +40,7 @@ switching to the root account.
 %prep
 %setup -q
 %patch2 -p1 -b .cloexec
+%patch3 -p1 -b .dpd
 
 %build
 CFLAGS="$RPM_OPT_FLAGS -fPIE" LDFLAGS="$RPM_OPT_FLAGS -pie" make PREFIX=/usr 
@@ -96,6 +98,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Tue Nov 13 2007 Tomas Mraz <tmraz@redhat.com> - 0.5.1-2
+- try to make DPD less sensitive (#345281)
+
 * Thu Sep 20 2007 Tomas Mraz <tmraz@redhat.com> - 0.5.1-1
 - upgrade to latest upstream
 
