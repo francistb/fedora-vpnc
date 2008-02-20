@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -98,6 +98,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Wed Feb 20 2008 Fedora Release Engineering <rel-eng@fedoraproject.org> - 0.5.1-3
+- Autorebuild for GCC 4.3
+
 * Tue Nov 13 2007 Tomas Mraz <tmraz@redhat.com> - 0.5.1-2
 - try to make DPD less sensitive (#345281)
 
