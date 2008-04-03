@@ -1,0 +1,18 @@
+diff -up vpnc-0.5.1/vpnc-script.mtu vpnc-0.5.1/vpnc-script
+--- vpnc-0.5.1/vpnc-script.mtu	2007-09-06 22:05:15.000000000 +0200
++++ vpnc-0.5.1/vpnc-script	2008-04-03 10:23:42.000000000 +0200
+@@ -95,7 +95,13 @@ fi
+ # =========== tunnel interface handling ====================================
+ 
+ do_ifconfig() {
+-	ifconfig "$TUNDEV" inet "$INTERNAL_IP4_ADDRESS" $ifconfig_syntax_ptp "$INTERNAL_IP4_ADDRESS" netmask 255.255.255.255 mtu 1412 up
++	if [ -n "$IPROUTE" ]; then
++		DEV=$($IPROUTE route | grep ^default | sed 's/^.* dev \([[:alnum:]-]\+\).*$/\1/')
++		MTU=$(($($IPROUTE link "$DEV" | grep mtu | sed 's/^.* mtu \([[:digit:]]\+\).*$/\1/') - 88))
++	else
++		MTU=1412
++	fi
++	ifconfig "$TUNDEV" inet "$INTERNAL_IP4_ADDRESS" $ifconfig_syntax_ptp "$INTERNAL_IP4_ADDRESS" netmask 255.255.255.255 mtu "$MTU" up
+ }
+ 
+ destroy_tun_device() {
