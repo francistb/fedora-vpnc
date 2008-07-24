@@ -14,7 +14,7 @@ Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
 Source6:	vpnc-cleanup
-Patch2:		vpnc-0.4.0-cloexec.patch
+Patch2:		vpnc-0.5.1-cloexec.patch
 Patch3:		vpnc-0.5.1-dpd.patch
 Patch4:		vpnc-0.5.1-mtu.patch
 Patch5:		vpnc-0.5.1-domain.patch

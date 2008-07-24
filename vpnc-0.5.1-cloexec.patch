@@ -1,0 +1,12 @@
+diff -up vpnc-0.5.1/vpnc.c.cloexec vpnc-0.5.1/vpnc.c
+--- vpnc-0.5.1/vpnc.c.cloexec	2007-09-10 22:39:48.000000000 +0200
++++ vpnc-0.5.1/vpnc.c	2008-07-24 23:29:49.000000000 +0200
+@@ -2693,6 +2693,8 @@ static void setup_link(struct sa_block *
+ 				close_tunnel();
+ 				error(1, errno, "socket(PF_INET, SOCK_RAW, IPPROTO_ESP)");
+ 			}
++			fcntl(s->esp_fd, F_SETFD, FD_CLOEXEC);
++
+ #ifdef IP_HDRINCL
+ 			if (setsockopt(s->esp_fd, IPPROTO_IP, IP_HDRINCL, &hincl, sizeof(hincl)) == -1) {
+ 				close_tunnel();
