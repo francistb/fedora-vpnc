@@ -1,0 +1,12 @@
+diff -up vpnc-0.5.1/vpnc-script.domain vpnc-0.5.1/vpnc-script
+--- vpnc-0.5.1/vpnc-script.domain	2008-07-24 22:06:21.000000000 +0200
++++ vpnc-0.5.1/vpnc-script	2008-07-24 22:07:08.000000000 +0200
+@@ -238,7 +238,7 @@ EOF
+ 					LINE=""
+ 				fi
+ 				;;
+-			domain*|search*)
++			search*)
+ 				if [ -n "$CISCO_DEF_DOMAIN" ]; then
+ 					LINE="$LINE $CISCO_DEF_DOMAIN"
+ 					CISCO_DEF_DOMAIN=""

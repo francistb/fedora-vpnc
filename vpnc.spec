@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.1
-Release:        5%{?dist}
+Release:        6%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -13,14 +13,16 @@ Source2:	vpnc.consolehelper
 Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
+Source6:	vpnc-cleanup
 Patch2:		vpnc-0.4.0-cloexec.patch
 Patch3:		vpnc-0.5.1-dpd.patch
 Patch4:		vpnc-0.5.1-mtu.patch
+Patch5:		vpnc-0.5.1-domain.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
-Requires:       kernel >= 2.4
+Requires:       upstart iproute
 
 %description
 A VPN client compatible with Cisco's EasyVPN equipment.
@@ -43,6 +45,7 @@ switching to the root account.
 %patch2 -p1 -b .cloexec
 %patch3 -p1 -b .dpd
 %patch4 -p1 -b .mtu
+%patch5 -p1 -b .domain
 
 %build
 CFLAGS="$RPM_OPT_FLAGS -fPIE" LDFLAGS="$RPM_OPT_FLAGS -pie" make PREFIX=/usr 
@@ -72,6 +75,8 @@ install -m 0755 %{SOURCE5} \
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc-disconnect
+install -Dp -m 0644 %{SOURCE6} \
+    $RPM_BUILD_ROOT%{_sysconfdir}/event.d/vpnc-cleanup
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -83,6 +88,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
+%config(noreplace) %{_sysconfdir}/event.d/vpnc-cleanup
 %{_sbindir}/vpnc
 %{_bindir}/cisco-decrypt
 %{_sbindir}/vpnc-disconnect
@@ -101,6 +107,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Thu Jul 24 2008 Tomas Mraz <tmraz@redhat.com> - 0.5.1-6
+- do not modify domain in resolv.conf (#446404)
+- clean up modified resolv.conf on startup (#455899)
+
 * Sat Apr  5 2008 Michal Schmidt <mschmidt@redhat.com> - 0.5.1-5
 - vpnc-script: fix 'ip link ...' syntax.
 
