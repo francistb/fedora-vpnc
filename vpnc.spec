@@ -1,6 +1,6 @@
 Name:           vpnc
-Version:        0.5.1
-Release:        6%{?dist}
+Version:        0.5.3
+Release:        2%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -16,8 +16,6 @@ Source5:	vpnc-helper
 Source6:	vpnc-cleanup
 Patch2:		vpnc-0.5.1-cloexec.patch
 Patch3:		vpnc-0.5.1-dpd.patch
-Patch4:		vpnc-0.5.1-mtu.patch
-Patch5:		vpnc-0.5.1-domain.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -44,8 +42,6 @@ switching to the root account.
 %setup -q
 %patch2 -p1 -b .cloexec
 %patch3 -p1 -b .dpd
-%patch4 -p1 -b .mtu
-%patch5 -p1 -b .domain
 
 %build
 CFLAGS="$RPM_OPT_FLAGS -fPIE" LDFLAGS="$RPM_OPT_FLAGS -pie" make PREFIX=/usr 
@@ -77,6 +73,7 @@ ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc-disconnect
 install -Dp -m 0644 %{SOURCE6} \
     $RPM_BUILD_ROOT%{_sysconfdir}/event.d/vpnc-cleanup
+rm -f $RPM_BUILD_ROOT%{_datadir}/doc/vpnc/COPYING
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -107,6 +104,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %changelog
+* Thu Nov 20 2008 Tomas Mraz <tmraz@redhat.com> - 0.5.3-2
+- upgrade to new version
+- fix race in vpnc-cleanup (#465315)
+
 * Thu Jul 24 2008 Tomas Mraz <tmraz@redhat.com> - 0.5.1-6
 - do not modify domain in resolv.conf (#446404)
 - clean up modified resolv.conf on startup (#455899)

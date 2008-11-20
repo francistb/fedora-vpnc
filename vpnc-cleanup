@@ -3,8 +3,6 @@
 
 start on stopped rcS
 
-stop on runlevel
-
 script
 	rm -f /var/run/vpnc/pid
 	RESOLV_CONF_BACKUP=/var/run/vpnc/resolv.conf-backup
