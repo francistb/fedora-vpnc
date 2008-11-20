@@ -14,7 +14,7 @@ Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
 Source6:	vpnc-cleanup
-Patch2:		vpnc-0.5.1-cloexec.patch
+Patch2:		vpnc-0.5.3-cloexec.patch
 Patch3:		vpnc-0.5.1-dpd.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
