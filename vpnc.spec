@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.3
-Release:        4%{?dist}
+Release:        5%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -20,7 +20,7 @@ Patch3:		vpnc-0.5.1-dpd.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
-Requires:       upstart iproute
+Requires:       upstart iproute vpnc-script
 
 %description
 A VPN client compatible with Cisco's EasyVPN equipment.
@@ -37,6 +37,16 @@ Requires:	usermode
 %description consoleuser
 Allows the console user to run the IPSec VPN client directly without
 switching to the root account.
+
+%package script
+Summary:	Routing setup script for vpnc and openconnect
+Group:		Applications/Internet
+BuildArch:	noarch
+
+%description script
+This script sets up routing for VPN connectivity, when invoked by vpnc
+or openconnect.
+
 
 %prep
 %setup -q
@@ -83,7 +93,6 @@ rm -rf $RPM_BUILD_ROOT
 %doc README COPYING pcf2vpnc pcf2vpnc.1
 
 %dir %{_sysconfdir}/vpnc
-%config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
 %config(noreplace) %{_sysconfdir}/event.d/vpnc-cleanup
 %{_sbindir}/vpnc
@@ -103,7 +112,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/vpnc*
 %{_sbindir}/vpnc-helper
 
+%files script
+%config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
+
 %changelog
+* Tue Nov  3 2009 David Woodhouse <David.Woodhouse@intel.com> - 0.5.3-5
+- Split vpnc-script out into separate package
+
 * Sun Jul 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
 
