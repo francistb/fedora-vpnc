@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.3
-Release:        5%{?dist}
+Release:        6%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -14,6 +14,7 @@ Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
 Source6:	vpnc-cleanup
+Source7:	http://git.infradead.org/users/dwmw2/vpnc-scripts.git/blob_plain/333b6ba3df9553f57d39b0b707cc89f3fe8e6660:/vpnc-script
 Patch2:		vpnc-0.5.3-cloexec.patch
 Patch3:		vpnc-0.5.1-dpd.patch
 
@@ -78,6 +79,8 @@ install -Dp -m 0644 %{SOURCE4} \
     $RPM_BUILD_ROOT%{_sysconfdir}/pam.d/vpnc-disconnect
 install -m 0755 %{SOURCE5} \
     $RPM_BUILD_ROOT%{_sbindir}/vpnc-helper
+install -m 0755 %{SOURCE7} \
+    $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/vpnc-script
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc-disconnect
@@ -116,6 +119,9 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Tue Nov 17 2009 David Woodhouse <David.Woodhouse@intel.com> - 0.5.3-6
+- Update vpnc-script to support IPv6 properly
+
 * Tue Nov  3 2009 David Woodhouse <David.Woodhouse@intel.com> - 0.5.3-5
 - Split vpnc-script out into separate package
 
