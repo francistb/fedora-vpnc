@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.3
-Release:        6%{?dist}
+Release:        7%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -21,7 +21,7 @@ Patch3:		vpnc-0.5.1-dpd.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
-Requires:       upstart iproute vpnc-script
+Requires:       upstart >= 0.6.0, iproute vpnc-script
 
 %description
 A VPN client compatible with Cisco's EasyVPN equipment.
@@ -85,7 +85,7 @@ mkdir -p $RPM_BUILD_ROOT%{_bindir}
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc-disconnect
 install -Dp -m 0644 %{SOURCE6} \
-    $RPM_BUILD_ROOT%{_sysconfdir}/event.d/vpnc-cleanup
+    $RPM_BUILD_ROOT%{_sysconfdir}/init/vpnc-cleanup.conf
 rm -f $RPM_BUILD_ROOT%{_datadir}/doc/vpnc/COPYING
 
 %clean
@@ -97,7 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
-%config(noreplace) %{_sysconfdir}/event.d/vpnc-cleanup
+%config(noreplace) %{_sysconfdir}/init/vpnc-cleanup
 %{_sbindir}/vpnc
 %{_bindir}/cisco-decrypt
 %{_sbindir}/vpnc-disconnect
@@ -119,6 +119,9 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Wed Dec  9 2009 Bill Nottingham <notting@redhat.com> - 0.5.3-7
+- Adjust for upstart 0.6
+
 * Tue Nov 17 2009 David Woodhouse <David.Woodhouse@intel.com> - 0.5.3-6
 - Update vpnc-script to support IPv6 properly
 
