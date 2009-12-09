@@ -97,7 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
-%config(noreplace) %{_sysconfdir}/init/vpnc-cleanup
+%config(noreplace) %{_sysconfdir}/init/vpnc-cleanup.conf
 %{_sbindir}/vpnc
 %{_bindir}/cisco-decrypt
 %{_sbindir}/vpnc-disconnect
