@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.3
-Release:        7%{?dist}
+Release:        8%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -21,7 +21,7 @@ Patch3:		vpnc-0.5.1-dpd.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
-Requires:       upstart >= 0.6.0, iproute vpnc-script
+Requires:       iproute vpnc-script
 
 %description
 A VPN client compatible with Cisco's EasyVPN equipment.
@@ -119,6 +119,9 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Fri Dec 17 2010 Dan Williams <dcbw@redhat.com> - 0.5.3-8
+- Remove dependency on upstart since we use systemd now
+
 * Wed Dec  9 2009 Bill Nottingham <notting@redhat.com> - 0.5.3-7
 - Adjust for upstart 0.6
 
