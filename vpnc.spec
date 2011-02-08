@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.3
-Release:        8%{?dist}
+Release:        9%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -119,6 +119,9 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Mon Feb 07 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
 * Fri Dec 17 2010 Dan Williams <dcbw@redhat.com> - 0.5.3-8
 - Remove dependency on upstart since we use systemd now
 
