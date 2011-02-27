@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.3
-Release:        9%{?dist}
+Release:        10%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -95,7 +95,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %doc README COPYING pcf2vpnc pcf2vpnc.1
 
-%dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
 %config(noreplace) %{_sysconfdir}/init/vpnc-cleanup.conf
 %{_sbindir}/vpnc
@@ -116,9 +115,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %files script
+%defattr(-,root,root)
+%dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Sun Feb 27 2011 Ville Skyttä <ville.skytta@iki.fi> - 0.5.3-10
+- Move /etc/vpnc dir ownership to vpnc-script (#680783).
+
 * Mon Feb 07 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-9
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 
