@@ -139,7 +139,7 @@ destroy_tun_device() {
 
 if [ -n "$IPROUTE" ]; then
 	fix_ip_get_output () {
-		sed 's/cache//;s/metric \?[0-9]\+ [0-9]\+//g;s/hoplimit [0-9]\+//g'
+		sed 's/cache//;s/metric \?[0-9]\+ [0-9]\+//g;s/hoplimit [0-9]\+//g;s/ipid 0x....//g'
 	}
 
 	set_vpngateway_route() {
@@ -520,8 +520,8 @@ do_connect() {
 		echo
 	fi
 
-	do_ifconfig
 	set_vpngateway_route
+	do_ifconfig
 	if [ -n "$CISCO_SPLIT_INC" ]; then
 		i=0
 		while [ $i -lt $CISCO_SPLIT_INC ] ; do
@@ -606,7 +606,7 @@ do_disconnect() {
 		for i in $INTERNAL_IP6_DNS ; do
 			del_ipv6_network_route "$i" "128"
 		done
-	else
+	elif [ -n "$INTERNAL_IP6_NETMASK" -o -n "$INTERNAL_IP6_ADDRESS" ]; then
 		reset_ipv6_default_route
 	fi
 

@@ -1,6 +1,6 @@
 Name:           vpnc
 Version:        0.5.3
-Release:        10%{?dist}
+Release:        11%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
@@ -14,7 +14,7 @@ Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
 Source6:	vpnc-cleanup
-Source7:	http://git.infradead.org/users/dwmw2/vpnc-scripts.git/blob_plain/333b6ba3df9553f57d39b0b707cc89f3fe8e6660:/vpnc-script
+Source7:	http://git.infradead.org/users/dwmw2/vpnc-scripts.git/blob_plain/a1cac186:/vpnc-script
 Patch2:		vpnc-0.5.3-cloexec.patch
 Patch3:		vpnc-0.5.1-dpd.patch
 
@@ -120,6 +120,9 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Sat May 28 2011 David Woodhouse <David.Woodhouse@intel.com> - 0.5.3-11
+- Update vpnc-script to cope with 'ipid' in route list.
+
 * Sun Feb 27 2011 Ville Skyttä <ville.skytta@iki.fi> - 0.5.3-10
 - Move /etc/vpnc dir ownership to vpnc-script (#680783).
 
