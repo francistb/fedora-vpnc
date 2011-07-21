@@ -22,6 +22,7 @@ Patch1:		vpnc-0.5.1-dpd.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libgcrypt-devel > 1.1.90
+BuildRequires:  gnutls-devel
 Requires:       iproute vpnc-script
 
 %description
