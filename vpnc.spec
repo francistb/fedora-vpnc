@@ -1,22 +1,23 @@
+%define snapshot .svn457
+
 Name:           vpnc
 Version:        0.5.3
-Release:        9%{?dist}
+Release:        12%{snapshot}%{?dist}
 
 Summary:        IPSec VPN client compatible with Cisco equipment
 
 Group:          Applications/Internet
 License:        GPLv2+
 URL:            http://www.unix-ag.uni-kl.de/~massar/vpnc/
-Source0:        http://www.unix-ag.uni-kl.de/~massar/vpnc/%{name}-%{version}.tar.gz
+Source0:        http://www.unix-ag.uni-kl.de/~massar/vpnc/%{name}-%{version}%{snapshot}.tar.gz
 Source1:        generic-vpnc.conf
 Source2:	vpnc.consolehelper
 Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
 Source6:	vpnc-cleanup
-Source7:	http://git.infradead.org/users/dwmw2/vpnc-scripts.git/blob_plain/333b6ba3df9553f57d39b0b707cc89f3fe8e6660:/vpnc-script
-Patch2:		vpnc-0.5.3-cloexec.patch
-Patch3:		vpnc-0.5.1-dpd.patch
+Source7:	http://git.infradead.org/users/dwmw2/vpnc-scripts.git/blob_plain/a1cac186:/vpnc-script
+Patch1:		vpnc-0.5.1-dpd.patch
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -51,8 +52,7 @@ or openconnect.
 
 %prep
 %setup -q
-%patch2 -p1 -b .cloexec
-%patch3 -p1 -b .dpd
+%patch1 -p1 -b .dpd
 
 %build
 CFLAGS="$RPM_OPT_FLAGS -fPIE" LDFLAGS="$RPM_OPT_FLAGS -pie" make PREFIX=/usr 
@@ -95,7 +95,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %doc README COPYING pcf2vpnc pcf2vpnc.1
 
-%dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
 %config(noreplace) %{_sysconfdir}/init/vpnc-cleanup.conf
 %{_sbindir}/vpnc
@@ -116,9 +115,21 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/vpnc-helper
 
 %files script
+%defattr(-,root,root)
+%dir %{_sysconfdir}/vpnc
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Thu Jul 21 2011 Dan Williams <dcbw@redhat.com> - 0.5.3-12.svn457
+- Update to svn snapshot r457
+- Enable support for Hybrid XAUTH (see rh #677419)
+
+* Sat May 28 2011 David Woodhouse <David.Woodhouse@intel.com> - 0.5.3-11
+- Update vpnc-script to cope with 'ipid' in route list.
+
+* Sun Feb 27 2011 Ville Skyttä <ville.skytta@iki.fi> - 0.5.3-10
+- Move /etc/vpnc dir ownership to vpnc-script (#680783).
+
 * Mon Feb 07 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-9
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 
