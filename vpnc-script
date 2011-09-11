@@ -55,6 +55,7 @@ SCRIPTNAME=`basename $0`
 # some systems, eg. Darwin & FreeBSD, prune /var/run on boot
 if [ ! -d "/var/run/vpnc" ]; then
 	mkdir -p /var/run/vpnc
+	[ -x /sbin/restorecon ] && /sbin/restorecon /var/run/vpnc
 fi
 
 # stupid SunOS: no blubber in /usr/local/bin ... (on stdout)
@@ -96,13 +97,24 @@ do_ifconfig() {
 	if [ -n "$INTERNAL_IP4_MTU" ]; then
 		MTU=$INTERNAL_IP4_MTU
 	elif [ -n "$IPROUTE" ]; then
-		MTU=$(($($IPROUTE route get "$VPNGATEWAY" | sed -ne 's/^.*mtu \([[:digit:]]\+\).*$/\1/p') - 88))
-	else
+		MTUDEV=$($IPROUTE route get "$VPNGATEWAY" | sed -ne 's/^.*dev \([a-z0-9]*\).*$/\1/p')
+		MTU=$($IPROUTE link show "$MTUDEV" | sed -ne 's/^.*mtu \([[:digit:]]\+\).*$/\1/p')
+		if [ -n "$MTU" ]; then
+			MTU=$(( $MTU - 88 ))
+		fi
+	fi
+
+	if [ -z "$MTU" ]; then
 		MTU=1412
 	fi
 
 	# Point to point interface require a netmask of 255.255.255.255 on some systems
-	ifconfig "$TUNDEV" inet "$INTERNAL_IP4_ADDRESS" $ifconfig_syntax_ptp "$INTERNAL_IP4_ADDRESS" netmask 255.255.255.255 mtu ${MTU} up
+	if [ -n "$IPROUTE" ]; then
+		$IPROUTE link set dev "$TUNDEV" up mtu "$MTU"
+		$IPROUTE addr add "$INTERNAL_IP4_ADDRESS/255.255.255.255" peer "$INTERNAL_IP4_ADDRESS" dev "$TUNDEV"
+	else
+		ifconfig "$TUNDEV" inet "$INTERNAL_IP4_ADDRESS" $ifconfig_syntax_ptp "$INTERNAL_IP4_ADDRESS" netmask 255.255.255.255 mtu ${MTU} up
+	fi
 
 	if [ -n "$INTERNAL_IP4_NETMASK" ]; then
 		set_network_route $INTERNAL_IP4_NETADDR $INTERNAL_IP4_NETMASK $INTERNAL_IP4_NETMASKLEN
@@ -139,7 +151,8 @@ destroy_tun_device() {
 
 if [ -n "$IPROUTE" ]; then
 	fix_ip_get_output () {
-		sed 's/cache//;s/metric \?[0-9]\+ [0-9]\+//g;s/hoplimit [0-9]\+//g;s/ipid 0x....//g'
+		sed -e 's/ /\n/g' | \
+		    sed -ne '1p;/via/{N;p};/dev/{N;p};/src/{N;p};/mtu/{N;p}'
 	}
 
 	set_vpngateway_route() {
@@ -477,14 +490,14 @@ do_pre_init() {
 		else # can't open /dev/net/tun
 			test -e /proc/sys/kernel/modprobe && `cat /proc/sys/kernel/modprobe` tun 2>/dev/null
 			# fix for broken devfs in kernel 2.6.x
-			if [ "`readlink /dev/net/tun`" = misc/net/tun \
-				-a ! -e /dev/net/misc/net/tun -a -e /dev/misc/net/tun ] ; then
+			if [ "`readlink /dev/net/tun`" = misc/net/tun ] && [ ! -e /dev/net/misc/net/tun ] && [ -e /dev/misc/net/tun ]; then
 				ln -sf /dev/misc/net/tun /dev/net/tun
 			fi
 			# make sure tun device exists
 			if [ ! -e /dev/net/tun ]; then
 				mkdir -p /dev/net
 				mknod -m 0640 /dev/net/tun c 10 200
+				[ -x /sbin/restorecon ] && /sbin/restorecon -r /dev/net
 			fi
 			# workaround for a possible latency caused by udev, sleep max. 10s
 			if kernel_is_2_6_or_above ; then
@@ -560,7 +573,7 @@ do_connect() {
 				set_ipv6_network_route "$i" "128"
 			fi
 		done
-	elif [ -n "$INTERNAL_IP6_NETMASK" -o -n "$INTERNAL_IP6_ADDRESS" ]; then
+	elif [ -n "$INTERNAL_IP6_NETMASK" ] || [ -n "$INTERNAL_IP6_ADDRESS" ]; then
 		set_ipv6_default_route
 	fi
 
@@ -606,7 +619,7 @@ do_disconnect() {
 		for i in $INTERNAL_IP6_DNS ; do
 			del_ipv6_network_route "$i" "128"
 		done
-	elif [ -n "$INTERNAL_IP6_NETMASK" -o -n "$INTERNAL_IP6_ADDRESS" ]; then
+	elif [ -n "$INTERNAL_IP6_NETMASK" ] || [ -n "$INTERNAL_IP6_ADDRESS" ]; then
 		reset_ipv6_default_route
 	fi
 
