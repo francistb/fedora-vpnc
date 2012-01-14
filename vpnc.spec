@@ -2,7 +2,7 @@
 
 Name:		vpnc
 Version:	0.5.3
-Release:	13%{snapshot}%{?dist}
+Release:	14%{snapshot}%{?dist}
 
 Summary:	IPSec VPN client compatible with Cisco equipment
 
@@ -120,6 +120,9 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-14.svn457
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
 * Sun Sep 11 2011 Christian Krause <chkr@fedoraproject.org> - 0.5.3-13.svn457
 - Use tmpfiles.d service to correctly handle /var/run/vpnc (#656719)
 - Update vpnc-script:
