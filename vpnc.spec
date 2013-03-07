@@ -2,7 +2,7 @@
 
 Name:		vpnc
 Version:	0.5.3
-Release:	16%{snapshot}%{?dist}
+Release:	17%{snapshot}%{?dist}
 
 Summary:	IPSec VPN client compatible with Cisco equipment
 
@@ -15,16 +15,17 @@ Source2:	vpnc.consolehelper
 Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
-Source6:	vpnc-cleanup
 # vpnc-script based on http://git.infradead.org/users/dwmw2/vpnc-scripts.git
 # local changes sent upstream
 Source7:	vpnc-script
 Source8:	%{name}-tmpfiles.conf
 
 Patch1:		vpnc-0.5.1-dpd.patch
+Patch2:		vpnc-0.5.3-use-autodie.patch
 
 BuildRequires:	libgcrypt-devel > 1.1.90
 BuildRequires:	gnutls-devel
+BuildRequires:	perl(autodie)
 Requires:	iproute vpnc-script
 Requires:	initscripts
 
@@ -57,6 +58,7 @@ or openconnect.
 %prep
 %setup -q
 %patch1 -p1 -b .dpd
+%patch2 -p1 -b .autodie
 
 %build
 CFLAGS="$RPM_OPT_FLAGS -fPIE" LDFLAGS="$RPM_OPT_FLAGS -pie" make PREFIX=/usr 
@@ -83,8 +85,6 @@ install -m 0755 %{SOURCE7} \
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc-disconnect
-install -Dp -m 0644 %{SOURCE6} \
-    $RPM_BUILD_ROOT%{_sysconfdir}/init/vpnc-cleanup.conf
 rm -f $RPM_BUILD_ROOT%{_datadir}/doc/vpnc/COPYING
 
 mkdir -p %{buildroot}%{_sysconfdir}/tmpfiles.d
@@ -99,7 +99,6 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}.conf
 %config(noreplace) %{_sysconfdir}/vpnc/default.conf
-%config(noreplace) %{_sysconfdir}/init/vpnc-cleanup.conf
 %{_sbindir}/vpnc
 %{_bindir}/cisco-decrypt
 %{_sbindir}/vpnc-disconnect
@@ -120,6 +119,10 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Thu Mar  7 2013 Tomáš Mráz <tmraz@redhat.com> - 0.5.3-17.svn457
+- Make it build
+- Remove vpnc-cleanup upstart configuration file
+
 * Fri Feb 15 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-16.svn457
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
 
