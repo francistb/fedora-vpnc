@@ -2,7 +2,7 @@
 
 Name:		vpnc
 Version:	0.5.3
-Release:	18%{snapshot}%{?dist}
+Release:	19%{snapshot}%{?dist}
 
 Summary:	IPSec VPN client compatible with Cisco equipment
 
@@ -22,6 +22,7 @@ Source8:	%{name}-tmpfiles.conf
 
 Patch1:		vpnc-0.5.1-dpd.patch
 Patch2:		vpnc-0.5.3-use-autodie.patch
+Patch3:		vpnc-0.5.3-unbound-support.patch
 
 BuildRequires:	libgcrypt-devel > 1.1.90
 BuildRequires:	gnutls-devel
@@ -119,6 +120,9 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Mon Sep 23 2013 Paul Wouters <pwouters@redhat.com> - 0.5.3-19.svn457
+- Add support for dynamically reconfiguring unbound DNS (rhbz#865092)
+
 * Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-18.svn457
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
@@ -258,7 +262,7 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 * Mon May 16 2005 Tomas Mraz <tmraz@redhat.com> 0.3.3-1
 - new upstream version
 
-* Fri Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
+* Thu Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
 - rebuilt
 
 * Wed Jan 05 2005 Warren Togami <wtogami@redhat.com> 0.3.2-3
