@@ -2,7 +2,7 @@
 
 Name:		vpnc
 Version:	0.5.3
-Release:	19%{snapshot}%{?dist}
+Release:	20%{snapshot}%{?dist}
 
 Summary:	IPSec VPN client compatible with Cisco equipment
 
@@ -22,7 +22,6 @@ Source8:	%{name}-tmpfiles.conf
 
 Patch1:		vpnc-0.5.1-dpd.patch
 Patch2:		vpnc-0.5.3-use-autodie.patch
-Patch3:		vpnc-0.5.3-unbound-support.patch
 
 BuildRequires:	libgcrypt-devel > 1.1.90
 BuildRequires:	gnutls-devel
@@ -120,6 +119,9 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Fri Nov 15 2013 Paul Wouters <pwouters@redhat.com> - 0.5.3-20.svn457
+- Actually patch the vpnc-script we ship with the unbound patch
+
 * Mon Sep 23 2013 Paul Wouters <pwouters@redhat.com> - 0.5.3-19.svn457
 - Add support for dynamically reconfiguring unbound DNS (rhbz#865092)
 

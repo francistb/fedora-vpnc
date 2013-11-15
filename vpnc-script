@@ -86,6 +86,9 @@ if [ -x /sbin/resolvconf ]; then # Optional tool on Debian, Ubuntu, Gentoo
 elif [ -x /sbin/modify_resolvconf ]; then # Mandatory tool on Suse earlier than 11.1
 	MODIFYRESOLVCONF=modify_resolvconf_suse
 	RESTORERESOLVCONF=restore_resolvconf_suse
+elif command -v unbound-control > /dev/null && unbound-control status &> /dev/null; then 
+        MODIFYRESOLVCONF=modify_resolvconf_unbound
+        RESTORERESOLVCONF=restore_resolvconf_unbound
 else # Generic for any OS
 	MODIFYRESOLVCONF=modify_resolvconf_generic
 	RESTORERESOLVCONF=restore_resolvconf_generic
@@ -468,6 +471,24 @@ domain $CISCO_DEF_DOMAIN"
 
 restore_resolvconf_manager() {
 	/sbin/resolvconf -d $TUNDEV
+}
+
+# === resolv.conf handling via unbound =========
+
+modify_resolvconf_unbound() {
+        if [ -n "$CISCO_DEF_DOMAIN" ]; then
+                unbound-control forward_add +i ${CISCO_DEF_DOMAIN} ${INTERNAL_IP4_DNS[@]}
+		unbound-control flush_requestlist
+                unbound-control flush_zone ${CISCO_DEF_DOMAIN}
+        fi
+}
+
+restore_resolvconf_unbound() {
+        if [ -n "$CISCO_DEF_DOMAIN" ]; then
+                unbound-control forward_remove +i ${CISCO_DEF_DOMAIN}
+                unbound-control flush_zone ${CISCO_DEF_DOMAIN}
+		unbound-control	flush_requestlist
+        fi
 }
 
 # ========= Toplevel state handling  =======================================
