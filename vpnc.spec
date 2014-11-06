@@ -1,8 +1,8 @@
-%define snapshot .svn457
+%define snapshot .svn550
 
 Name:		vpnc
 Version:	0.5.3
-Release:	23%{snapshot}%{?dist}
+Release:	24%{snapshot}%{?dist}
 
 Summary:	IPSec VPN client compatible with Cisco equipment
 
@@ -19,6 +19,8 @@ Source5:	vpnc-helper
 # local changes sent upstream
 Source7:	vpnc-script
 Source8:	%{name}-tmpfiles.conf
+# script used to generate the svn snapshot, not used in the actual build process
+Source99:	fetch-sources.sh
 
 Patch1:		vpnc-0.5.1-dpd.patch
 Patch2:		vpnc-0.5.3-use-autodie.patch
@@ -119,6 +121,9 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 %config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Thu Nov 06 2014 Felix Schwarz <fschwarz@fedoraproject.org> - 0.5.3-24.svn550
+- update to svn revision 550 (bz 1016215)
+
 * Mon Aug 18 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-23.svn457
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
 
