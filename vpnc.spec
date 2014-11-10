@@ -2,7 +2,7 @@
 
 Name:		vpnc
 Version:	0.5.3
-Release:	24%{snapshot}%{?dist}
+Release:	25%{snapshot}%{?dist}
 
 Summary:	IPSec VPN client compatible with Cisco equipment
 
@@ -15,9 +15,6 @@ Source2:	vpnc.consolehelper
 Source3:	vpnc-disconnect.consolehelper
 Source4:	vpnc.pam
 Source5:	vpnc-helper
-# vpnc-script based on http://git.infradead.org/users/dwmw2/vpnc-scripts.git
-# local changes sent upstream
-Source7:	vpnc-script
 Source8:	%{name}-tmpfiles.conf
 # script used to generate the svn snapshot, not used in the actual build process
 Source99:	fetch-sources.sh
@@ -47,16 +44,6 @@ Requires:	usermode
 Allows the console user to run the IPSec VPN client directly without
 switching to the root account.
 
-%package script
-Summary:	Routing setup script for vpnc and openconnect
-Group:		Applications/Internet
-BuildArch:	noarch
-
-%description script
-This script sets up routing for VPN connectivity, when invoked by vpnc
-or openconnect.
-
-
 %prep
 %setup -q
 %patch1 -p1 -b .dpd
@@ -82,12 +69,12 @@ install -Dp -m 0644 %{SOURCE4} \
     $RPM_BUILD_ROOT%{_sysconfdir}/pam.d/vpnc-disconnect
 install -m 0755 %{SOURCE5} \
     $RPM_BUILD_ROOT%{_sbindir}/vpnc-helper
-install -m 0755 %{SOURCE7} \
-    $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/vpnc-script
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc
 ln -sf consolehelper $RPM_BUILD_ROOT%{_bindir}/vpnc-disconnect
 rm -f $RPM_BUILD_ROOT%{_datadir}/doc/vpnc/COPYING
+# vpnc-script is packaged in a separate package
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/vpnc/vpnc-script
 
 mkdir -p %{buildroot}%{_sysconfdir}/tmpfiles.d
 install -m 0644 %{SOURCE8} %{buildroot}%{_sysconfdir}/tmpfiles.d/%{name}.conf
@@ -115,12 +102,11 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 %{_bindir}/vpnc*
 %{_sbindir}/vpnc-helper
 
-%files script
-%defattr(-,root,root)
-%dir %{_sysconfdir}/vpnc
-%config(noreplace) %{_sysconfdir}/vpnc/vpnc-script
 
 %changelog
+* Mon Nov 10 2014 Felix Schwarz <fschwarz@fedoraproject.org> - 0.5.3-25.svn550
+- remove "-script" subpackage as this was split off (bz 1128147)
+
 * Thu Nov 06 2014 Felix Schwarz <fschwarz@fedoraproject.org> - 0.5.3-24.svn550
 - update to svn revision 550 (bz 1016215)
 
