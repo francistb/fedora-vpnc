@@ -2,7 +2,7 @@
 
 Name:		vpnc
 Version:	0.5.3
-Release:	25%{snapshot}%{?dist}
+Release:	26%{snapshot}%{?dist}
 
 Summary:	IPSec VPN client compatible with Cisco equipment
 
@@ -104,6 +104,9 @@ install -d -m 0755 %{buildroot}%{_localstatedir}/run/%{name}/
 
 
 %changelog
+* Fri Jun 19 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.3-26.svn550
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
 * Mon Nov 10 2014 Felix Schwarz <fschwarz@fedoraproject.org> - 0.5.3-25.svn550
 - remove "-script" subpackage as this was split off (bz 1128147)
 
