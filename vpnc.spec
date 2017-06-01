@@ -2,7 +2,7 @@
 
 Name:		vpnc
 Version:	0.5.3
-Release:	30%{snapshot}%{?dist}
+Release:	31%{snapshot}%{?dist}
 
 Summary:	IPSec VPN client compatible with Cisco equipment
 
@@ -21,6 +21,7 @@ Source99:	fetch-sources.sh
 
 Patch1:		vpnc-0.5.1-dpd.patch
 Patch2:		vpnc-0.5.3-use-autodie.patch
+Patch3:		vpnc-0.5.3-ike.patch
 
 BuildRequires:	libgcrypt-devel > 1.1.90
 BuildRequires:	gnutls-devel
@@ -48,6 +49,7 @@ switching to the root account.
 %setup -q
 %patch1 -p1 -b .dpd
 %patch2 -p1 -b .autodie
+%patch3 -p1 -b .ike
 
 %build
 CFLAGS="$RPM_OPT_FLAGS -fPIE" LDFLAGS="$RPM_OPT_FLAGS -pie" make PREFIX=/usr 

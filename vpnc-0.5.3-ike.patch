@@ -1,0 +1,11 @@
+diff -up vpnc-0.5.3/vpnc.c.ike vpnc-0.5.3/vpnc.c
+--- vpnc-0.5.3/vpnc.c.ike	2017-05-31 20:46:31.725081444 -0400
++++ vpnc-0.5.3/vpnc.c	2017-05-31 20:47:26.753926629 -0400
+@@ -1205,7 +1205,6 @@ static void lifetime_ike_process(struct
+ 	assert(a->af == isakmp_attr_16);
+ 	assert(a->u.attr_16 == IKE_LIFE_TYPE_SECONDS || a->u.attr_16 == IKE_LIFE_TYPE_K);
+ 	assert(a->next != NULL);
+-	assert(a->next->type == IKE_ATTRIB_LIFE_DURATION);
+ 
+ 	if (a->next->af == isakmp_attr_16)
+ 		value = a->next->u.attr_16;
